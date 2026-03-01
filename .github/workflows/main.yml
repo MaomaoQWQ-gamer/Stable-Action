@@ -1,0 +1,39 @@
+name: Build IPA
+
+on:
+  workflow_dispatch: # Cho phép bạn nhấn nút để chạy thủ công
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest
+
+      - name: Build Archive
+        run: |
+          xcodebuild archive \
+            -project "Stable Action.xcodeproj" \
+            -scheme "Stable Action" \
+            -archivePath ./build/StableAction.xcarchive \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Export IPA (Unsigned)
+        run: |
+          mkdir -p ./build/Payload
+          cp -r ./build/StableAction.xcarchive/Products/Applications/*.app ./build/Payload/
+          cd ./build
+          zip -r StableAction.ipa Payload
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: StableAction-IPA
+          path: ./build/StableAction.ipa
